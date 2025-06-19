@@ -1,6 +1,8 @@
 
 import type { Metadata } from 'next';
 import './globals.css';
+import Footer from './_components/footer';
+import { Toaster } from './_components/ui/toaster';
 
 export const metadata: Metadata = {
   title: 'GrafosMap',
@@ -22,6 +24,8 @@ export default function RootLayout({
 
         <main className="flex-grow">
           {children}
-        </main></body></html>
+        </main>
+        <Footer />
+        <Toaster /></body></html>
   );
 }
