@@ -452,7 +452,7 @@ const DijkstraMapPage: NextPage = () => {
           const resultString = 
             `Menor Caminho:\nOrigem: Nó ${scriptNodes[startNodeIdx].id} (Lat: ${appNodes[startNodeIdx].originalLat.toFixed(5)}, Lon: ${appNodes[startNodeIdx].originalLon.toFixed(5)})\n` +
             `Destino: Nó ${scriptNodes[endNodeIdx].id} (Lat: ${appNodes[endNodeIdx].originalLat.toFixed(5)}, Lon: ${appNodes[endNodeIdx].originalLon.toFixed(5)})\n` +
-            `---------------------------------\nDistância: ${result.distance.toFixed(3)}\nTempo: ${result.processingTimeMs.toFixed(2)} ms\n` +
+            `---------------------------------\nDistância: ${result.distance.toFixed(3)}\nTempo de processamento: ${result.processingTimeMs.toFixed(2)} ms\n` +
             `Nós visitados: ${result.visitedNodesCount}\n---------------------------------\nCaminho (IDs):\n${pathNodeIds}\n` +
             `---------------------------------\nCoordenadas:\n${pathNodeCoords}`;
           
