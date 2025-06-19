@@ -53,20 +53,73 @@ interface ScalingParams {
   canvasHeight: number;
 }
 
-class PriorityQueue {
-  items: { element: number; priority: number }[];
+class MinHeap {
+  heap: { node: number; priority: number }[];
+
   constructor() {
-    this.items = [];
+    this.heap = [];
   }
-  enqueue(element: number, priority: number): void {
-    this.items.push({ element, priority });
-    this.items.sort((a, b) => a.priority - b.priority);
+
+  private parent(i: number) {
+    return Math.floor((i - 1) / 2);
   }
-  dequeue(): { element: number; priority: number } | undefined {
-    return this.items.shift();
+
+  private left(i: number) {
+    return 2 * i + 1;
   }
+
+  private right(i: number) {
+    return 2 * i + 2;
+  }
+
+  private swap(i: number, j: number) {
+    [this.heap[i], this.heap[j]] = [this.heap[j], this.heap[i]];
+  }
+
+  private heapifyUp(index: number) {
+    while (index > 0 && this.heap[this.parent(index)].priority > this.heap[index].priority) {
+      this.swap(index, this.parent(index));
+      index = this.parent(index);
+    }
+  }
+
+  private heapifyDown(index: number) {
+    let smallest = index;
+    const left = this.left(index);
+    const right = this.right(index);
+
+    if (left < this.heap.length && this.heap[left].priority < this.heap[smallest].priority) {
+      smallest = left;
+    }
+
+    if (right < this.heap.length && this.heap[right].priority < this.heap[smallest].priority) {
+      smallest = right;
+    }
+
+    if (smallest !== index) {
+      this.swap(index, smallest);
+      this.heapifyDown(smallest);
+    }
+  }
+
+  insert(node: number, priority: number) {
+    this.heap.push({ node, priority });
+    this.heapifyUp(this.heap.length - 1);
+  }
+
+  extractMin(): { node: number; priority: number } | undefined {
+    if (this.heap.length === 0) return undefined;
+    const min = this.heap[0];
+    const end = this.heap.pop();
+    if (this.heap.length > 0 && end) {
+      this.heap[0] = end;
+      this.heapifyDown(0);
+    }
+    return min;
+  }
+
   isEmpty(): boolean {
-    return this.items.length === 0;
+    return this.heap.length === 0;
   }
 }
 
@@ -180,48 +233,48 @@ const DijkstraMapPage: NextPage = () => {
 
   const dijkstraInternal = useCallback((startNodeIndex: number, endNodeIndex: number, currentNodes: ScriptNode[], currentAdj: AdjacencyList): DijkstraDisplayResult | null => {
     if (currentNodes.length === 0 || currentAdj.length === 0 || startNodeIndex >= currentNodes.length || endNodeIndex >= currentNodes.length) return null;
-    
+
     const startTime = performance.now();
     const dist = Array(currentNodes.length).fill(Infinity);
     const prev = Array(currentNodes.length).fill(null);
     const visited = Array(currentNodes.length).fill(false);
     let visitedNodesCount = 0;
-    
+
     dist[startNodeIndex] = 0;
-    const pq = new PriorityQueue();
-    pq.enqueue(startNodeIndex, 0);
+    const pq = new MinHeap();
+    pq.insert(startNodeIndex, 0);
 
     while (!pq.isEmpty()) {
-      const dequeued = pq.dequeue();
-      if (!dequeued) break;
-      const { element: u } = dequeued;
+      const current = pq.extractMin();
+      if (!current) break;
+      const u = current.node;
 
       if (visited[u]) continue;
-      visited[u] = true; 
+      visited[u] = true;
       visitedNodesCount++;
 
       if (u === endNodeIndex) break;
 
-      if (!currentAdj[u]) continue;
       for (const neighbor of currentAdj[u]) {
         const alt = dist[u] + neighbor.weight;
         if (alt < dist[neighbor.node]) {
           dist[neighbor.node] = alt;
           prev[neighbor.node] = u;
-          pq.enqueue(neighbor.node, alt);
+          pq.insert(neighbor.node, alt);
         }
       }
     }
-    const processingTimeMs = performance.now() - startTime;
 
+    const processingTimeMs = performance.now() - startTime;
     if (dist[endNodeIndex] === Infinity) return null;
-    
+
     const path: number[] = [];
     for (let at: number | null = endNodeIndex; at !== null; at = prev[at]) path.push(at);
     path.reverse();
-    
+
     return { distance: dist[endNodeIndex], path, visitedNodesCount, processingTimeMs };
   }, []);
+
 
   useEffect(() => {
     const canvas = canvasRef.current;
