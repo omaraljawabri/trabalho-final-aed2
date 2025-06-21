@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 
 export function WelcomeText() {
-  const typingText = 'Seja Bem Vindo';
+  const typingText = 'Seja Bem-Vindo';
   const staticText = 'ao GrafosMap';
   const [text, setText] = useState('');
 
