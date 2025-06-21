@@ -72,6 +72,7 @@ class PriorityQueue {
 
 const DijkstraMapPage: NextPage = () => {
   const [osmFile, setOsmFile] = useState<File | null>(null);
+  const [polyFile, setPolyFile] = useState<File | null>(null);
   const [appNodes, setAppNodes] = useState<AppNode[]>([]);
   const [scriptNodes, setScriptNodes] = useState<ScriptNode[]>([]);
   const [ways, setWays] = useState<Way[]>([]);
@@ -177,6 +178,87 @@ const DijkstraMapPage: NextPage = () => {
     };
     reader.readAsText(osmFile);
   }, [osmFile, toast, buildGraphInternal]);
+
+  const handlePolyFileChange = (event: ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file && file.name.endsWith('.poly')) {
+      setPolyFile(file);
+      setAppNodes([]); setScriptNodes([]); setWays([]); setAdj([]); setSelectedNodeIndices([]);
+      setPathResult(null); setPathResultText(null); setMapStats("Carregando novo arquivo...");
+      setScalingParams(null);
+      canvasRef.current?.getContext('2d')?.clearRect(0, 0, canvasRef.current.width, canvasRef.current.height);
+    } else {
+      toast({ title: "Erro de Arquivo", description: "Selecione um arquivo .poly válido.", variant: "destructive" });
+      setPolyFile(null);
+    }
+  };
+
+  const handlePolyUploadAndParse = useCallback(() => {
+  if (!polyFile) {
+    toast({ title: "Nenhum Arquivo", description: "Por favor, selecione um arquivo .poly.", variant: "destructive" });
+    return;
+  }
+
+  const reader = new FileReader();
+  reader.onload = () => {
+    try {
+      const text = reader.result as string;
+      const lines = text.split('\n').map(line => line.trim()).filter(line => line.length > 0);
+
+      if (lines.length < 2) throw new Error("Arquivo inválido");
+
+      // === PARTE 1: VÉRTICES ===
+      const [nNodesStr] = lines[0].split(/\s+/);
+      const nNodes = parseInt(nNodesStr);
+      const nodeLines = lines.slice(1, 1 + nNodes);
+
+      const nodes: AppNode[] = nodeLines.map(line => {
+        const [idStr, xStr, yStr] = line.split(/\s+/);
+        return {
+          id: idStr,
+          x: parseFloat(xStr),
+          y: parseFloat(yStr),
+          originalLat: parseFloat(yStr),
+          originalLon: parseFloat(xStr),
+        };
+      });
+
+      // === PARTE 2: ARESTAS ===
+      const edgesHeaderLine = lines[1 + nNodes]; // linha do tipo "109 0 1"
+      const nEdges = parseInt(edgesHeaderLine.split(/\s+/)[0]); // pode ser usado para validar
+
+      const edgeLines = lines.slice(2 + nNodes, lines.length - 1); // ignora o último "0"
+
+      const newParsedWays: Way[] = [];
+
+      edgeLines.forEach(line => {
+        const [_, fromStr, toStr] = line.split(/\s+/);
+        const from = parseInt(fromStr);
+        const to = parseInt(toStr);
+        newParsedWays.push({ nodes: [from, to], oneway: false }); // uma aresta por linha
+      });
+
+      const script: ScriptNode[] = nodes.map(({ id, x, y }) => ({ id, x, y }));
+
+      setAppNodes(nodes);
+      setScriptNodes(script);
+      setWays(newParsedWays);
+      buildGraphInternal(script, newParsedWays);
+      setMapStats(`Arquivo .poly convertido com sucesso.\nNós: ${script.length}\nArestas: ${newParsedWays.length}`);
+      toast({ title: "Arquivo .poly processado", description: "Grafo gerado com sucesso." });
+    } catch (e) {
+      console.error(e);
+      toast({ title: "Erro", description: "Falha ao processar arquivo .poly personalizado.", variant: "destructive" });
+    }
+  };
+
+  reader.onerror = () => {
+    toast({ title: "Erro", description: "Erro ao ler arquivo .poly.", variant: "destructive" });
+  };
+
+  reader.readAsText(polyFile);
+}, [polyFile, toast, buildGraphInternal]);
+
 
   const dijkstraInternal = useCallback((startNodeIndex: number, endNodeIndex: number, currentNodes: ScriptNode[], currentAdj: AdjacencyList): DijkstraDisplayResult | null => {
     if (currentNodes.length === 0 || currentAdj.length === 0 || startNodeIndex >= currentNodes.length || endNodeIndex >= currentNodes.length) return null;
@@ -300,7 +382,7 @@ const DijkstraMapPage: NextPage = () => {
       ctx.shadowBlur = 0; ctx.setLineDash([]);
     }
     
-    ctx.fillStyle = 'blue'; 
+    ctx.fillStyle = 'green'; 
     selectedNodeIndices.forEach(nodeIndex => {
       if (scriptNodes[nodeIndex]) {
         const p = scaleCanvasPoint(scriptNodes[nodeIndex]);
@@ -308,7 +390,7 @@ const DijkstraMapPage: NextPage = () => {
         
         const appNode = appNodes[nodeIndex];
         if (appNode) {
-            ctx.fillStyle = document.documentElement.classList.contains('dark') ? 'white' : 'black';
+            ctx.fillStyle = document.documentElement.classList.contains('dark') ? 'blue' : 'black';
             ctx.font = "10px Arial";
             ctx.textAlign = "center"; ctx.fillText(`ID: ${appNode.id}`, p.x, p.y - 10);
         }
@@ -468,6 +550,20 @@ const DijkstraMapPage: NextPage = () => {
             </div>
             {osmFile && <p className="text-sm text-muted-foreground">Arquivo: {osmFile.name}</p>}
           </div>
+          <div className="space-y-4 pt-4 border-t border-border/50 mt-6">
+    <Label htmlFor="poly-file" className="text-lg font-medium text-foreground">Arquivo .POLY</Label>
+    <div className="flex flex-col sm:flex-row gap-4 items-stretch">
+      <Input
+        id="poly-file" type="file" accept=".poly" onChange={handlePolyFileChange}
+          className="flex-grow file:mr-4 file:py-2 h-14 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-primary file:text-primary-foreground hover:file:bg-primary/90"
+      />
+      <Button onClick={handlePolyUploadAndParse} disabled={!polyFile || isLoading} className="w-full sm:w-auto h-14">
+        <UploadCloud className="mr-2 h-5 w-5" />
+        {isLoading ? 'Processando...' : 'Carregar e Processar POLY'}
+      </Button>
+    </div>
+    {polyFile && <p className="text-sm text-muted-foreground">Arquivo: {polyFile.name}</p>}
+  </div>
         </CardContent>
       </Card>
 
@@ -489,7 +585,7 @@ const DijkstraMapPage: NextPage = () => {
         </CardHeader>
         <CardContent className="flex flex-col items-center justify-center p-2 sm:p-4">
           <canvas ref={canvasRef} width={700} height={450} className="border border-border/60 rounded-md bg-background/30 shadow-inner" />
-          {appNodes.length === 0 && !isLoading && <p className="mt-4 text-muted-foreground">Carregue um arquivo OSM para visualizar.</p>}
+          {appNodes.length === 0 && !isLoading && <p className="mt-4 text-muted-foreground">Carregue um arquivo OSM ou POLY para visualizar o grafo.</p>}
           {isLoading && <p className="mt-4 text-muted-foreground">Processando arquivo, aguarde...</p>}
           
           {selectedNodeIndices.length > 0 && appNodes.length > 0 && (
