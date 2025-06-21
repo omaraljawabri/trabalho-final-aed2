@@ -1,5 +1,6 @@
 "use client";
 
+import Header from '../_components/header';
 import type { NextPage } from 'next';
 import { useState, ChangeEvent, useRef, useEffect, useCallback } from 'react';
 import { Button } from '../_components/ui/button';
@@ -443,7 +444,7 @@ const DijkstraMapPage: NextPage = () => {
         
         const appNode = appNodes[nodeIndex];
         if (appNode) {
-            ctx.fillStyle = document.documentElement.classList.contains('dark') ? 'blue' : 'black';
+            ctx.fillStyle = document.documentElement.classList.contains('dark') ? 'blue' : 'blue';
             ctx.font = "10px Arial";
             ctx.textAlign = "center"; ctx.fillText(`ID: ${appNode.id}`, p.x, p.y - 10);
         }
@@ -579,13 +580,16 @@ const DijkstraMapPage: NextPage = () => {
   }, [toast]);
 
   return (
-    <div className="container mx-auto py-8 px-4 flex flex-col items-center min-h-[calc(100vh-8rem)]">
+  <>
+    <Header />
+
+    <div className="container mx-auto py-8 px-4 flex flex-col items-center min-h-[calc(100vh-8rem)] pt-1">
       <Card className="w-full max-w-4xl mb-8 bg-card/80 backdrop-blur-md shadow-xl border-border/50">
         <CardHeader className="text-center">
           <MapIcon className="mx-auto h-12 w-12 text-primary mb-2" />
           <CardTitle className="text-3xl font-headline text-primary">Mapa Interativo com Dijkstra</CardTitle>
           <CardDescription className="text-muted-foreground">
-            Carregue .osm, clique nos nós para definir início/fim e encontre o menor caminho.
+            Carregue um arquivo .OSM ou .POLY, clique nos nós para definir um início (verde) e um fim (azul) e visualize o menor caminho.
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
@@ -603,20 +607,21 @@ const DijkstraMapPage: NextPage = () => {
             </div>
             {osmFile && <p className="text-sm text-muted-foreground">Arquivo: {osmFile.name}</p>}
           </div>
+
           <div className="space-y-4 pt-4 border-t border-border/50 mt-6">
-    <Label htmlFor="poly-file" className="text-lg font-medium text-foreground">Arquivo .POLY</Label>
-    <div className="flex flex-col sm:flex-row gap-4 items-stretch">
-      <Input
-        id="poly-file" type="file" accept=".poly" onChange={handlePolyFileChange}
-          className="flex-grow file:mr-4 file:py-2 h-14 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-primary file:text-primary-foreground hover:file:bg-primary/90"
-      />
-      <Button onClick={handlePolyUploadAndParse} disabled={!polyFile || isLoading} className="w-full sm:w-auto h-14">
-        <UploadCloud className="mr-2 h-5 w-5" />
-        {isLoading ? 'Processando...' : 'Carregar e Processar POLY'}
-      </Button>
-    </div>
-    {polyFile && <p className="text-sm text-muted-foreground">Arquivo: {polyFile.name}</p>}
-  </div>
+            <Label htmlFor="poly-file" className="text-lg font-medium text-foreground">Arquivo .POLY</Label>
+            <div className="flex flex-col sm:flex-row gap-4 items-stretch">
+              <Input
+                id="poly-file" type="file" accept=".poly" onChange={handlePolyFileChange}
+                className="flex-grow file:mr-4 file:py-2 h-14 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-primary file:text-primary-foreground hover:file:bg-primary/90"
+              />
+              <Button onClick={handlePolyUploadAndParse} disabled={!polyFile || isLoading} className="w-full sm:w-auto h-14">
+                <UploadCloud className="mr-2 h-5 w-5" />
+                {isLoading ? 'Processando...' : 'Carregar e Processar POLY'}
+              </Button>
+            </div>
+            {polyFile && <p className="text-sm text-muted-foreground">Arquivo: {polyFile.name}</p>}
+          </div>
         </CardContent>
       </Card>
 
@@ -625,22 +630,37 @@ const DijkstraMapPage: NextPage = () => {
           <div className="flex justify-between items-start">
             <div>
               <CardTitle className="text-xl font-headline text-primary flex items-center">
-                <Route className="mr-2 h-6 w-6"/> Visualização do Grafo
+                <Route className="mr-2 h-6 w-6" /> Visualização do Grafo
               </CardTitle>
-              {mapStats && <CardDescription className="text-muted-foreground pt-1 whitespace-pre-line">{mapStats}</CardDescription>}
+              {mapStats && (
+                <CardDescription className="text-muted-foreground pt-1 whitespace-pre-line">
+                  {mapStats}
+                </CardDescription>
+              )}
             </div>
-            {appNodes.length > 0 && ( 
-                <Button onClick={handleCopyImage} variant="outline" size="sm" className="ml-auto">
-                    <CopyIcon className="mr-2 h-4 w-4" /> Copiar Imagem
-                </Button>
+            {appNodes.length > 0 && (
+              <Button onClick={handleCopyImage} variant="outline" size="sm" className="ml-auto">
+                <CopyIcon className="mr-2 h-4 w-4" /> Copiar Imagem
+              </Button>
             )}
           </div>
         </CardHeader>
         <CardContent className="flex flex-col items-center justify-center p-2 sm:p-4">
-          <canvas ref={canvasRef} width={700} height={450} className="border border-border/60 rounded-md bg-background/30 shadow-inner" />
-          {appNodes.length === 0 && !isLoading && <p className="mt-4 text-muted-foreground">Carregue um arquivo OSM ou POLY para visualizar o grafo.</p>}
-          {isLoading && <p className="mt-4 text-muted-foreground">Processando arquivo, aguarde...</p>}
-          
+          <canvas
+            ref={canvasRef}
+            width={700}
+            height={450}
+            className="border border-border/60 rounded-md bg-background/30 shadow-inner"
+          />
+          {appNodes.length === 0 && !isLoading && (
+            <p className="mt-4 text-muted-foreground">
+              Carregue um arquivo OSM ou POLY para visualizar o grafo.
+            </p>
+          )}
+          {isLoading && (
+            <p className="mt-4 text-muted-foreground">Processando arquivo, aguarde...</p>
+          )}
+
           {selectedNodeIndices.length > 0 && appNodes.length > 0 && (
             <div className="mt-4 w-full text-sm text-muted-foreground space-y-2">
               {selectedNodeIndices.map((nodeIndex, displayIndex) => {
@@ -648,7 +668,11 @@ const DijkstraMapPage: NextPage = () => {
                 if (!node) return null;
                 return (
                   <p key={nodeIndex}>
-                    <strong className="text-foreground">{displayIndex === 0 ? "Origem:" : "Destino:"}</strong> Nó {node.id} (Lat: {node.originalLat.toFixed(5)}, Lon: {node.originalLon.toFixed(5)})
+                    <strong className="text-foreground">
+                      {displayIndex === 0 ? 'Origem:' : 'Destino:'}
+                    </strong>{' '}
+                    Nó {node.id} (Lat: {node.originalLat.toFixed(5)}, Lon:{' '}
+                    {node.originalLon.toFixed(5)})
                   </p>
                 );
               })}
@@ -656,21 +680,24 @@ const DijkstraMapPage: NextPage = () => {
           )}
         </CardContent>
       </Card>
-      
+
       {pathResultText && (
         <Card className="w-full max-w-4xl mt-8 bg-card/80 backdrop-blur-md shadow-xl border-border/50">
           <CardHeader>
             <CardTitle className="text-xl font-headline text-primary flex items-center">
-                <FileTextIcon className="mr-2 h-6 w-6"/> Resultado do Caminho
+              <FileTextIcon className="mr-2 h-6 w-6" /> Resultado do Caminho
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <pre className="text-sm text-foreground whitespace-pre-wrap bg-background/50 p-4 rounded-md overflow-x-auto">{pathResultText}</pre>
+            <pre className="text-sm text-foreground whitespace-pre-wrap bg-background/50 p-4 rounded-md overflow-x-auto">
+              {pathResultText}
+            </pre>
           </CardContent>
         </Card>
       )}
     </div>
-  );
-};
+  </>
+);
+}
 
 export default DijkstraMapPage;

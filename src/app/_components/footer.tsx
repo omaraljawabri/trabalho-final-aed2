@@ -12,7 +12,7 @@ export default function Footer() {
 
   const navLinks = [
     { href: '/', label: 'Início' },
-    { href: '/features', label: 'Funcionalidades' },
+    { href: '/dijkstra-map', label: 'Funcionalidades' },
     { href: '/contact', label: 'Contato' },
   ];
 
