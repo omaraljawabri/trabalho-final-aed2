@@ -530,13 +530,13 @@ const DijkstraMapPage: NextPage = () => {
   <>
     <Header />
 
-    <div className="container mx-auto py-8 px-4 flex flex-col items-center min-h-[calc(100vh-8rem)] pt-4">
+    <div className="container mx-auto py-8 px-4 flex flex-col items-center min-h-[calc(100vh-8rem)] pt-1">
       <Card className="w-full max-w-4xl mb-8 bg-card/80 backdrop-blur-md shadow-xl border-border/50">
         <CardHeader className="text-center">
           <MapIcon className="mx-auto h-12 w-12 text-primary mb-2" />
           <CardTitle className="text-3xl font-headline text-primary">Mapa Interativo com Dijkstra</CardTitle>
           <CardDescription className="text-muted-foreground">
-            Carregue um arquivo .osm ou .poly, clique nos nós para definir um início (verde) e um fim (azul) e visualize o menor caminho.
+            Carregue um arquivo .OSM ou .POLY, clique nos nós para definir um início (verde) e um fim (azul) e visualize o menor caminho.
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
